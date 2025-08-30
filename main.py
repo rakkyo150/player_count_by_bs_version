@@ -1,3 +1,5 @@
+import sys
+from typing import Any, Tuple
 import time
 import requests
 from collections import Counter
@@ -29,11 +31,7 @@ def version_key(x):
     # コンマなしは最後尾に回すため、バージョンを非常に小さくする
     return (count, parse_version("0"))
 
-# 1. プレイヤー取得（日本のプレイヤー）
-pages=100
-player_id_list=[]
-
-for page in tqdm(range(1, pages + 1), desc="Processing pages"):
+def fetch_player_ids(player_id_list: list, page: int) -> Tuple[list, Any] :
   try:
     url_players = f"https://api.beatleader.com/players?countries=jp&page={page}"
     response = requests.get(url_players)
@@ -41,33 +39,53 @@ for page in tqdm(range(1, pages + 1), desc="Processing pages"):
     players = response_json.get("data")
   except (requests.RequestException, ValueError) as e:
     print(f"ページ {page} の情報取得に失敗しました\nError: {e}")
-    time.sleep(2)
-    continue
+    return player_id_list, None
 
-  version_counter = Counter()
-  front_counter = Counter()
-  back_counter = Counter()
+  if not players:
+    return player_id_list, response_json
+
+  now_timestamp = int(time.time())
+  one_month_seconds = 30 * 24 * 60 * 60
 
   for player in players:
-    target_timestamp = player.get("scoreStats").get('lastScoreTime')
-    # 現在時刻のUnixタイムスタンプを取得
-    now_timestamp = int(time.time())
-
-    # 現在時刻と比較対象の差を計算（秒）
-    diff_seconds = abs(now_timestamp - target_timestamp)
-
-    # 1ヶ月を30日として秒数に換算
-    one_month_seconds = 30 * 24 * 60 * 60
-
-    # 1ヶ月差があるかどうか判定
-    if diff_seconds >= one_month_seconds:
+    score_state = player.get("scoreStats")
+    if score_state is None:
       continue
+    target_timestamp = score_state.get('lastScoreTime')
+    if target_timestamp is None:
+      continue
+
+    diff_seconds = abs(now_timestamp - target_timestamp)
+    if diff_seconds >= one_month_seconds:
+        continue
 
     player_id = player.get('id')
     if not player_id:
-      continue
+        continue
     player_id_list.append(player_id)
-    
+
+  return player_id_list, response_json
+
+# 1. プレイヤー取得（日本のプレイヤー）
+limit_pages = 1
+per_page = 50
+player_id_list=[]
+version_counter = Counter()
+front_counter = Counter()
+back_counter = Counter()
+
+player_id_list, response_json = fetch_player_ids(player_id_list, 1)
+time.sleep(2)
+if response_json == None:
+  print("1ページ目のresponse_jsonがNoneです。処理を中断します。")
+  sys.exit(1)
+
+total_data = response_json.get("metadata").get("total")
+all_pages = (total_data + per_page - 1) // per_page
+
+for page in tqdm(range(2, all_pages + 1), desc="Processing pages"):
+  print(page)
+  player_id_list, _ = fetch_player_ids(player_id_list, page)
   time.sleep(2)
 
 # 2. 各プレイヤースコア取得
