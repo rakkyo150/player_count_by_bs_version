@@ -1,0 +1,54 @@
+name: uv Run
+on:
+  schedule:
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+    branches: [ master ]
+
+jobs:
+  build-and-release:
+    name: uv
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6.5.0
+    
+    - name: Set up Python
+      run: uv python install
+
+    - name: Install modules
+      run: uv sync --all-extras --dev
+    
+    - name: Run uv
+      run: uv run main.py
+
+    - name: Release
+      run: |
+        set -x
+        assets=()
+        assets+=("./README.md")
+        tag_name=`date '+%Y%m%d%H%M'`
+        gh release create "$tag_name" "${assets[@]}" -t "Latest"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate version file
+      run: |
+        echo `date +%Y%m%d%H%M%S` > version.txt
+
+    - name: Auto Commit
+      uses: stefanzweifel/git-auto-commit-action@v3.0.0
+      with:
+        commit_message: Auto Commit
+
+    - name: Cleanup
+      uses: dev-drprasad/delete-older-releases@v0.3.4
+      with:
+        keep_latest: 1
+        delete_tags: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
