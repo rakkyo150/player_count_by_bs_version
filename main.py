@@ -30,7 +30,7 @@ def version_key(x):
     return (count, parse_version("0"))
 
 # 1. プレイヤー取得（日本のプレイヤー）
-pages=50
+pages=100
 player_id_list=[]
 
 for page in tqdm(range(1, pages + 1), desc="Processing pages"):
