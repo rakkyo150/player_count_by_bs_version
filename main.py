@@ -115,11 +115,11 @@ result_text = f"\n## {marker}\n"
 result_text += f"\n過去1ヶ月以内にプレイがあり、BeatLeaderのModを導入している、BeatLeaderのランク上位{sum(version_counter.values())}人の日本で登録しているプレイヤーが対象\n"
 result_text += "\n### プラットフォームのみ\n"
 for platform, count in sorted_by_count_front_counter:
-  result_text += f"{platform}: {count}人\n"
+  result_text += f"- {platform}: {count}人\n"
 
 result_text += "\n### ゲームバージョンのみ\n"
 for game_version, count in sorted_by_version_back_counter:
-  result_text += f"{game_version}: {count}人\n"
+  result_text += f"- {game_version}: {count}人\n"
     
 result_text += "\n### プラットフォームとゲームバージョンの両方\n"
 for version, count in sorted_by_count_version_counter:
