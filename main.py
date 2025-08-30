@@ -34,7 +34,7 @@ pages=50
 player_id_list=[]
 
 for page in tqdm(range(1, pages + 1), desc="Processing pages"):
-  url_players = f"https://api.beatleader.xyz/players?countries=jp&page={page}"
+  url_players = f"https://api.beatleader.com/players?countries=jp&page={page}"
   response = requests.get(url_players)
   response_json = response.json()
   players = response_json.get("data")
@@ -68,7 +68,7 @@ for page in tqdm(range(1, pages + 1), desc="Processing pages"):
 # 2. 各プレイヤースコア取得
 print(f"プレイヤーID総数：{len(player_id_list)}")
 for player_id in tqdm(player_id_list, desc="Processing players"):
-  url_scores = f"https://api.beatleader.xyz/player/{player_id}/scores"
+  url_scores = f"https://api.beatleader.com/player/{player_id}/scores"
   scores_response = requests.get(url_scores)
   scores = scores_response.json()
 
