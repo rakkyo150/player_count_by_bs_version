@@ -84,7 +84,6 @@ total_data = response_json.get("metadata").get("total")
 all_pages = (total_data + per_page - 1) // per_page
 
 for page in tqdm(range(178, all_pages + 1), desc="Processing pages"):
-  print(page)
   player_id_list, _ = fetch_player_ids(player_id_list, page)
   time.sleep(2)
 
@@ -104,11 +103,12 @@ for player_id in tqdm(player_id_list, desc="Processing players"):
     continue
 
   # 3. 一番新しいスコアのplatform取得（newest firstなら一番目）
-  try:
-    data = scores.get("data")
-    platform = data[0].get('platform')
-  except(requests.RequestException, ValueError) as e:
-    print(f"scoresの構造が予期せぬものになっています\nscores: {scores}\nError: {e}")
+  data = scores.get("data")
+  if data is None or len(data) == 0:
+    time.sleep(2)
+    continue
+  platform = data[0].get('platform')
+  if platform is None:
     time.sleep(2)
     continue
 
