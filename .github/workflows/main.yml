@@ -3,7 +3,7 @@ on:
   schedule:
     - cron: "0 22 * * *"
   workflow_dispatch:
-    branches: [ master ]
+    branches: [ master, test ]
 
 jobs:
   build-and-release:
