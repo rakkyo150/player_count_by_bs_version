@@ -36,6 +36,7 @@ player_id_list=[]
 for page in tqdm(range(1, pages + 1), desc="Processing pages"):
   url_players = f"https://api.beatleader.xyz/players?countries=jp&page={page}"
   response = requests.get(url_players)
+  print(f"response: \n{response}")
   response_json = response.json()
   players = response_json.get("data")
 
