@@ -34,10 +34,15 @@ pages=100
 player_id_list=[]
 
 for page in tqdm(range(1, pages + 1), desc="Processing pages"):
-  url_players = f"https://api.beatleader.com/players?countries=jp&page={page}"
-  response = requests.get(url_players)
-  response_json = response.json()
-  players = response_json.get("data")
+  try:
+    url_players = f"https://api.beatleader.com/players?countries=jp&page={page}"
+    response = requests.get(url_players)
+    response_json = response.json()
+    players = response_json.get("data")
+  except (requests.RequestException, ValueError) as e:
+    print(f"ページ {page} の情報取得に失敗しました\nError: {e}")
+    time.sleep(2)
+    continue
 
   version_counter = Counter()
   front_counter = Counter()
@@ -68,15 +73,26 @@ for page in tqdm(range(1, pages + 1), desc="Processing pages"):
 # 2. 各プレイヤースコア取得
 print(f"プレイヤーID総数：{len(player_id_list)}")
 for player_id in tqdm(player_id_list, desc="Processing players"):
-  url_scores = f"https://api.beatleader.com/player/{player_id}/scores"
-  scores_response = requests.get(url_scores)
-  scores = scores_response.json()
+  try:
+    url_scores = f"https://api.beatleader.com/player/{player_id}/scores"
+    scores_response = requests.get(url_scores)
+    scores = scores_response.json()
+  except(requests.RequestException, ValueError) as e:
+    print(f"player_id {player_id} の情報取得に失敗しました\nError: {e}")
+    time.sleep(2)
+    continue
 
   if not scores:
     continue
 
   # 3. 一番新しいスコアのplatform取得（newest firstなら一番目）
-  platform = scores.get("data")[0].get('platform')
+  try:
+    data = scores.get("data")
+    platform = data[0].get('platform')
+  except(requests.RequestException, ValueError) as e:
+    print(f"scoresの構造が予期せぬものになっています\nscores: {scores}\nError: {e}")
+    time.sleep(2)
+    continue
 
   if platform:
     simple_platform=platform.split('_')[0]
