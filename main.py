@@ -7,6 +7,8 @@ from packaging.version import parse as parse_version
 from tqdm import tqdm
 import re
 import demjson3
+import matplotlib.pyplot as plt
+import japanize_matplotlib
 
 def remove_section_from_readme(marker) -> None:
   filepath="README.md" 
@@ -100,6 +102,27 @@ def fetch_hmds_dict() -> Any:
     print("HMDsの定義が見つかりませんでした。")
     return None
 
+def plot_bar_chart(data, title, filename, rotate_xticks=False):
+  labels, counts = zip(*data)
+  # パーセント表示は不要なので削除
+
+  plt.figure(figsize=(10, 6))
+  bars = plt.bar(labels, counts, width=0.3)
+  plt.title(title)
+
+  if rotate_xticks:
+    plt.xticks(rotation=45, ha='right')
+
+  # 棒の上に総数を表示
+  for bar, count in zip(bars, counts):
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, height, f'{count}', ha='center', va='bottom')
+
+  plt.tight_layout()
+  plt.savefig(filename)
+  plt.close()
+  print(f"{filename} を保存しました。")
+
 # 1. プレイヤー取得（日本のプレイヤー）
 limit_pages = 1
 per_page = 50
@@ -178,9 +201,9 @@ for player_id in tqdm(player_id_list, desc="Processing players"):
   time.sleep(2)
 
 sorted_by_count_hmd_counter = hmd_counter.most_common()
-sorted_by_count_front_counter = platform_counter.most_common()
-sorted_by_version_back_counter = sorted(game_version_counter.items(), key=lambda x: parse_version(x[0]), reverse=True)
-sorted_by_count_version_counter = sorted(
+sorted_by_count_platform_counter = platform_counter.most_common()
+sorted_by_version_game_version_counter = sorted(game_version_counter.items(), key=lambda x: parse_version(x[0]), reverse=True)
+sorted_by_count_platform_game_version_counter = sorted(
     platform_game_version_counter.items(),
     key=version_key,
     reverse=True
@@ -190,30 +213,58 @@ marker="プレイヤーのゲームバージョン統計結果"
 
 remove_section_from_readme(marker)
 
-result_text = f"\n## {marker}\n"
+result_text = f"## {marker}\n"
 
 sum = sum(platform_game_version_counter.values())
 
 result_text += f"過去1ヶ月以内にプレイがあり、BeatLeaderのModを導入している、BeatLeaderのランク上位{sum}人の日本で登録しているプレイヤーが対象\n"
 result_text += "\n### プラットフォームのみ\n"
 result_text += "| プラットフォーム | 人数 | 割合 |\n| ---- | ---- | ---- |\n"
-for platform, count in sorted_by_count_front_counter:
+for platform, count in sorted_by_count_platform_counter:
   result_text += f"| {platform} | {count} | {calc_percentage(sum, count)}% |\n"
+plot_bar_chart(
+  sorted_by_count_platform_counter,
+  title="プラットフォーム別プレイヤー人数",
+  filename="platform_count.png",
+  rotate_xticks=True
+)
+result_text += "\n![プラットフォーム](platform_count.png)\n"
 
 result_text += "\n### ゲームバージョンのみ\n"
 result_text += "| バージョン | 人数 | 割合 |\n| ---- | ---- | ---- |\n"
-for game_version, count in sorted_by_version_back_counter:
+for game_version, count in sorted_by_version_game_version_counter:
   result_text += f"| {game_version} | {count} | {calc_percentage(sum, count)}% |\n"
+plot_bar_chart(
+    sorted_by_version_game_version_counter,
+    title="ゲームバージョン別プレイヤー人数",
+    filename="game_version_count.png",
+    rotate_xticks=True
+)
+result_text += "\n![ゲームバージョン](game_version_count.png)\n"
     
 result_text += "\n### HMD\n"
 result_text += "| HMD | 人数 | 割合 |\n| ---- | ---- | ---- |\n"
 for hmd_id, count in sorted_by_count_hmd_counter:
   result_text += f"| {hmd_dict.get(hmd_id, {}).get('name')} | {count} | {calc_percentage(sum, count)}% |\n"
+plot_bar_chart(
+  [(hmd_dict.get(hmd_id, {}).get('name', str(hmd_id)), count) for hmd_id, count in sorted_by_count_hmd_counter],
+  title="HMD別プレイヤー人数",
+  filename="hmd_count.png",
+  rotate_xticks=True
+)
+result_text += "\n![HMD](hmd_count.png)\n"
     
 result_text += "\n### プラットフォームとゲームバージョンの両方\n"
 result_text += "| プラットフォームとバージョン | 人数 | 割合 |\n| ---- | ---- | ---- |\n"
-for version, count in sorted_by_count_version_counter:
+for version, count in sorted_by_count_platform_game_version_counter:
   result_text += f"| {version} | {count} | {calc_percentage(sum, count)}% |\n"
+plot_bar_chart(
+  sorted_by_count_platform_game_version_counter,
+  title="プラットフォーム&ゲームバージョン別プレイヤー人数",
+  filename="platform_game_version_count.png",
+  rotate_xticks=True
+)
+result_text += "\n![HMD](platform_game_version_count.png)"
 
 # 5. README.mdに追加
 with open("README.md", "a", encoding="utf-8") as f:
