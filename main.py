@@ -102,14 +102,17 @@ def fetch_hmds_dict() -> Any:
     print("HMDsの定義が見つかりませんでした。")
     return None
 
-def plot_bar_chart(data, title, filename, rotate_xticks=False):
+def plot_bar_chart(data, title, filename, rotate_xticks=False, invert_xaxis=False):
   labels, counts = zip(*data)
   # パーセント表示は不要なので削除
 
   plt.figure(figsize=(10, 6))
   bars = plt.bar(labels, counts, width=0.3)
   plt.title(title)
-
+  
+  if invert_xaxis:
+    plt.gca().invert_xaxis()
+  
   if rotate_xticks:
     plt.xticks(rotation=45, ha='right')
 
@@ -230,7 +233,8 @@ plot_bar_chart(
   sorted_by_count_platform_counter,
   title="プラットフォーム別プレイヤー人数",
   filename="platform_count.png",
-  rotate_xticks=False
+  rotate_xticks=False,
+  invert_xaxis=False
 )
 result_text += "\n![プラットフォーム](platform_count.png)\n"
 
@@ -242,7 +246,8 @@ plot_bar_chart(
     sorted_by_version_game_version_counter,
     title="ゲームバージョン別プレイヤー人数",
     filename="game_version_count.png",
-    rotate_xticks=True
+    rotate_xticks=True,
+    invert_xaxis=True
 )
 result_text += "\n![ゲームバージョン](game_version_count.png)\n"
     
@@ -254,7 +259,8 @@ plot_bar_chart(
   [(hmd_dict.get(hmd_id, {}).get('name', str(hmd_id)), count) for hmd_id, count in sorted_by_count_hmd_counter],
   title="HMD別プレイヤー人数",
   filename="hmd_count.png",
-  rotate_xticks=True
+  rotate_xticks=True,
+  invert_xaxis=False
 )
 result_text += "\n![HMD](hmd_count.png)\n"
     
@@ -266,7 +272,8 @@ plot_bar_chart(
   sorted_by_count_platform_game_version_counter,
   title="プラットフォーム&ゲームバージョン別プレイヤー人数",
   filename="platform_game_version_count.png",
-  rotate_xticks=True
+  rotate_xticks=True,
+  invert_xaxis=False
 )
 result_text += "\n![HMD](platform_game_version_count.png)"
 
