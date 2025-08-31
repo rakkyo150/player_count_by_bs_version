@@ -52,6 +52,12 @@ wheels = [
 ]
 
 [[package]]
+name = "demjson3"
+version = "3.0.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f7/d2/6a81a9b5311d50542e11218b470dafd8adbaf1b3e51fc1fddd8a57eed691/demjson3-3.0.6.tar.gz", hash = "sha256:37c83b0c6eb08d25defc88df0a2a4875d58a7809a9650bd6eee7afd8053cdbac", size = 131477, upload-time = "2022-10-22T19:09:05.379Z" }
+
+[[package]]
 name = "idna"
 version = "3.10"
 source = { registry = "https://pypi.org/simple" }
@@ -74,6 +80,7 @@ name = "player-count-by-bs-version"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "demjson3" },
     { name = "packaging" },
     { name = "requests" },
     { name = "tqdm" },
@@ -81,6 +88,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "demjson3", specifier = ">=3.0.6" },
     { name = "packaging", specifier = ">=25.0" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "tqdm", specifier = ">=4.67.1" },
