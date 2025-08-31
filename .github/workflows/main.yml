@@ -25,29 +25,7 @@ jobs:
     - name: Run uv
       run: uv run main.py
 
-    - name: Release
-      run: |
-        set -x
-        assets=()
-        assets+=("./README.md")
-        tag_name=`date '+%Y%m%d%H%M'`
-        gh release create "$tag_name" "${assets[@]}" -t "Latest"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Generate version file
-      run: |
-        echo `date +%Y%m%d%H%M%S` > version.txt
-
     - name: Auto Commit
-      uses: stefanzweifel/git-auto-commit-action@v3.0.0
+      uses: stefanzweifel/git-auto-commit-action@v6
       with:
         commit_message: Auto Commit
-
-    - name: Cleanup
-      uses: dev-drprasad/delete-older-releases@v0.3.4
-      with:
-        keep_latest: 1
-        delete_tags: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
