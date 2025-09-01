@@ -46,7 +46,7 @@ def calc_percentage(total: float, part: float) -> float:
   return round(percentage, 2)
 
 
-def fetch_player_ids(player_id_list: list, page: int) -> Tuple[list, Any] :
+def fetch_player_ids_and_names(player_id_name_list: list, page: int) -> Tuple[list[Tuple], Any] :
   try:
     url_players = f"https://api.beatleader.com/players?countries=jp&page={page}"
     response = requests.get(url_players)
@@ -54,10 +54,10 @@ def fetch_player_ids(player_id_list: list, page: int) -> Tuple[list, Any] :
     players = response_json.get("data")
   except (requests.RequestException, ValueError) as e:
     print(f"ページ {page} の情報取得に失敗しました\nError: {e}")
-    return player_id_list, None
+    return player_id_name_list, None
 
   if not players:
-    return player_id_list, response_json
+    return player_id_name_list, response_json
 
   now_timestamp = int(time.time())
   one_month_seconds = 30 * 24 * 60 * 60
@@ -77,9 +77,12 @@ def fetch_player_ids(player_id_list: list, page: int) -> Tuple[list, Any] :
     player_id = player.get('id')
     if not player_id:
         continue
-    player_id_list.append(player_id)
-
-  return player_id_list, response_json
+    player_name = player.get('name')
+    if not player_name:
+        continue
+    player_id_name_list.append([player_id, player_name])
+    
+  return player_id_name_list, response_json
 
 def fetch_hmds_dict() -> Any:
   url = "https://raw.githubusercontent.com/BeatLeader/beatleader-website/master/src/utils/beatleader/format.js"
@@ -129,7 +132,7 @@ def plot_bar_chart(data, title, filename, rotate_xticks=False, invert_xaxis=Fals
 # 1. プレイヤー取得（日本のプレイヤー）
 limit_pages = 1
 per_page = 50
-player_id_list=[]
+player_id_name_list=[]
 platform_game_version_counter = Counter()
 platform_counter = Counter()
 game_version_counter = Counter()
@@ -138,7 +141,7 @@ hmd_counter = Counter()
 hmd_dict = fetch_hmds_dict()
 time.sleep(2)
 
-player_id_list, response_json = fetch_player_ids(player_id_list, 1)
+player_id_name_list, response_json = fetch_player_ids_and_names(player_id_name_list, 1)
 time.sleep(2)
 if response_json == None:
   print("1ページ目のresponse_jsonがNoneです。処理を中断します。")
@@ -148,40 +151,40 @@ total_data = response_json.get("metadata").get("total")
 all_pages = (total_data + per_page - 1) // per_page
 
 for page in tqdm(range(2, all_pages + 1), desc="Processing pages"):
-  player_id_list, _ = fetch_player_ids(player_id_list, page)
+  player_id_name_list, _ = fetch_player_ids_and_names(player_id_name_list, page)
   time.sleep(2)
 
 # 2. 各プレイヤースコア取得
-print(f"プレイヤーID総数：{len(player_id_list)}")
-for player_id in tqdm(player_id_list, desc="Processing players"):
+print(f"プレイヤーID総数：{len(player_id_name_list)}")
+for player_id_name in tqdm(player_id_name_list, desc="Processing players"):
   try:
-    url_scores = f"https://api.beatleader.com/player/{player_id}/scores"
+    url_scores = f"https://api.beatleader.com/player/{player_id_name[0]}/scores"
     scores_response = requests.get(url_scores)
     scores = scores_response.json()
   except(requests.RequestException, ValueError) as e:
-    print(f"player_id {player_id} のrequestsに失敗しました。スキップします。requests失敗理由: {e}")
+    print(f"player_id: {player_id_name[0]}, player_name: {player_id_name[1]} のrequestsに失敗しました。スキップします。requests失敗理由: {e}")
     time.sleep(2)
     continue
 
   if not scores:
-    print(f"player_id {player_id} のscoresが空です。スキップします。")
+    print(f"player_id: {player_id_name[0]}, player_name: {player_id_name[1]} のscoresが空です。スキップします。")
     time.sleep(2)
     continue
 
   # 3. 一番新しいスコアのplatform取得（newest firstなら一番目）
   data = scores.get("data")
   if data is None or len(data) == 0:
-    print(f"player_id {player_id} のdataが空です。スキップします。")
+    print(f"player_id: {player_id_name[0]}, player_name: {player_id_name[1]} のdataが空です。スキップします。")
     time.sleep(2)
     continue
   platform = data[0].get('platform')
   if platform is None:
-    print(f"player_id {player_id} のplatformが空です。スキップします。")
+    print(f"player_id: {player_id_name[0]}, player_name: {player_id_name[1]} のplatformが空です。スキップします。")
     time.sleep(2)
     continue
   hmd_id = data[0].get('hmd')
   if hmd_id is None:
-    print(f"player_id {player_id} のhmdが空です。スキップします。")
+    print(f"player_id: {player_id_name[0]}, player_name: {player_id_name[1]} のhmdが空です。スキップします。")
     time.sleep(2)
     continue
   
