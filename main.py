@@ -227,11 +227,11 @@ remove_section_from_readme(marker)
 
 result_text = f"## {marker}\n"
 
-result_text = f"未更新プレイヤーは{unupdated_players_count}人いました。\n"
+result_text += f"未更新プレイヤーは{unupdated_players_count}人いました。  \n"
 
 sum = sum(platform_game_version_counter.values())
 
-result_text += f"過去1ヶ月以内にプレイがあり、BeatLeaderのModを導入している、未更新プレイヤーを除いた、BeatLeaderに日本で登録しているプレイヤーである{sum}人が対象\n"
+result_text += f"過去1ヶ月以内にプレイがあり、BeatLeaderのModを導入している、未更新プレイヤーを除いた、BeatLeaderに日本で登録しているプレイヤーである{sum}人が対象。\n"
 result_text += "\n### プラットフォームのみ\n"
 result_text += "| プラットフォーム | 人数 | 割合 |\n| ---- | ---- | ---- |\n"
 for platform, count in sorted_by_count_platform_counter:
