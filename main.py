@@ -129,15 +129,16 @@ def plot_bar_chart(data, title, filename, rotate_xticks=False, invert_xaxis=Fals
   plt.close()
   print(f"{filename} を保存しました。")
 
-# 1. プレイヤー取得（日本のプレイヤー）
 limit_pages = 1
 per_page = 50
+unupdated_players_count = 0
 player_id_name_list=[]
 platform_game_version_counter = Counter()
 platform_counter = Counter()
 game_version_counter = Counter()
 hmd_counter = Counter()
 
+# 1. HMDの種類とプレイヤー取得（日本のプレイヤー）
 hmd_dict = fetch_hmds_dict()
 time.sleep(2)
 
@@ -171,10 +172,11 @@ for player_id_name in tqdm(player_id_name_list, desc="Processing players"):
     time.sleep(2)
     continue
 
-  # 3. 一番新しいスコアのplatform取得（newest firstなら一番目）
+  # 3. 一番新しいスコアのplatform等取得
   data = scores.get("data")
   if data is None or len(data) == 0:
-    print(f"player_id: {player_id_name[0]}, player_name: {player_id_name[1]} のdataが空です。スキップします。")
+    print(f"player_id: {player_id_name[0]}, player_name: {player_id_name[1]} のdataが空です。未更新プレイヤーにカウントします。")
+    unupdated_players_count += 1
     time.sleep(2)
     continue
   platform = data[0].get('platform')
@@ -225,9 +227,11 @@ remove_section_from_readme(marker)
 
 result_text = f"## {marker}\n"
 
+result_text = f"未更新プレイヤーは{unupdated_players_count}人いました。\n"
+
 sum = sum(platform_game_version_counter.values())
 
-result_text += f"過去1ヶ月以内にプレイがあり、BeatLeaderのModを導入している、BeatLeaderのランク上位{sum}人の日本で登録しているプレイヤーが対象\n"
+result_text += f"過去1ヶ月以内にプレイがあり、BeatLeaderのModを導入している、未更新プレイヤーを除いた、BeatLeaderに日本で登録しているプレイヤーである{sum}人が対象\n"
 result_text += "\n### プラットフォームのみ\n"
 result_text += "| プラットフォーム | 人数 | 割合 |\n| ---- | ---- | ---- |\n"
 for platform, count in sorted_by_count_platform_counter:
