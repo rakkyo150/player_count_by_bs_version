@@ -9,6 +9,9 @@ import re
 import demjson3
 import matplotlib.pyplot as plt
 import japanize_matplotlib
+import json
+import os
+from datetime import datetime
 
 def remove_section_from_readme(marker) -> None:
   filepath="README.md" 
@@ -137,6 +140,7 @@ platform_game_version_counter = Counter()
 platform_counter = Counter()
 game_version_counter = Counter()
 hmd_counter = Counter()
+sorted_by_count_named_hmd_counter = {}
 
 # 1. HMDの種類とプレイヤー取得（日本のプレイヤー）
 hmd_dict = fetch_hmds_dict()
@@ -151,7 +155,7 @@ if response_json == None:
 total_data = response_json.get("metadata").get("total")
 all_pages = (total_data + per_page - 1) // per_page
 
-for page in tqdm(range(2, all_pages + 1), desc="Processing pages"):
+for page in tqdm(range(2, 2), desc="Processing pages"):
   player_id_name_list, _ = fetch_player_ids_and_names(player_id_name_list, page)
   time.sleep(2)
 
@@ -213,6 +217,9 @@ for player_id_name in tqdm(player_id_name_list, desc="Processing players"):
   time.sleep(2)
 
 sorted_by_count_hmd_counter = hmd_counter.most_common()
+for hmd_id, count in sorted_by_count_hmd_counter:
+    hmd_name = hmd_dict.get(hmd_id, {}).get('name', str(hmd_id))
+    sorted_by_count_named_hmd_counter[hmd_name] = count
 sorted_by_count_platform_counter = platform_counter.most_common()
 sorted_by_version_game_version_counter = sorted(game_version_counter.items(), key=lambda x: parse_version(x[0]), reverse=True)
 sorted_by_count_platform_game_version_counter = sorted(
@@ -229,13 +236,13 @@ result_text = f"## {marker}\n"
 
 result_text += f"未更新プレイヤーは{unupdated_players_count}人いました。  \n"
 
-sum = sum(platform_game_version_counter.values())
+updated_players_count = sum(platform_game_version_counter.values())
 
-result_text += f"過去1ヶ月以内にプレイがあり、BeatLeaderのModを導入している、未更新プレイヤーを除いた、BeatLeaderに日本で登録しているプレイヤーである{sum}人が対象。\n"
+result_text += f"過去1ヶ月以内にプレイがあり、BeatLeaderのModを導入している、未更新プレイヤーを除いた、BeatLeaderに日本で登録しているプレイヤーである{updated_players_count}人が対象。\n"
 result_text += "\n### プラットフォームのみ\n"
 result_text += "| プラットフォーム | 人数 | 割合 |\n| ---- | ---- | ---- |\n"
 for platform, count in sorted_by_count_platform_counter:
-  result_text += f"| {platform} | {count} | {calc_percentage(sum, count)}% |\n"
+  result_text += f"| {platform} | {count} | {calc_percentage(updated_players_count, count)}% |\n"
 plot_bar_chart(
   sorted_by_count_platform_counter,
   title="プラットフォーム別プレイヤー人数",
@@ -248,7 +255,7 @@ result_text += "\n![プラットフォーム](platform_count.png)\n"
 result_text += "\n### ゲームバージョンのみ\n"
 result_text += "| バージョン | 人数 | 割合 |\n| ---- | ---- | ---- |\n"
 for game_version, count in sorted_by_version_game_version_counter:
-  result_text += f"| {game_version} | {count} | {calc_percentage(sum, count)}% |\n"
+  result_text += f"| {game_version} | {count} | {calc_percentage(updated_players_count, count)}% |\n"
 plot_bar_chart(
     sorted_by_version_game_version_counter,
     title="ゲームバージョン別プレイヤー人数",
@@ -260,10 +267,10 @@ result_text += "\n![ゲームバージョン](game_version_count.png)\n"
     
 result_text += "\n### HMD\n"
 result_text += "| HMD | 人数 | 割合 |\n| ---- | ---- | ---- |\n"
-for hmd_id, count in sorted_by_count_hmd_counter:
-  result_text += f"| {hmd_dict.get(hmd_id, {}).get('name')} | {count} | {calc_percentage(sum, count)}% |\n"
+for hmd_name, count in sorted_by_count_named_hmd_counter.items():
+  result_text += f"| {hmd_name} | {count} | {calc_percentage(updated_players_count, count)}% |\n"
 plot_bar_chart(
-  [(hmd_dict.get(hmd_id, {}).get('name', str(hmd_id)), count) for hmd_id, count in sorted_by_count_hmd_counter],
+  [(hmd_name, count) for hmd_name, count in sorted_by_count_named_hmd_counter.items()],
   title="HMD別プレイヤー人数",
   filename="hmd_count.png",
   rotate_xticks=True,
@@ -274,7 +281,7 @@ result_text += "\n![HMD](hmd_count.png)\n"
 result_text += "\n### プラットフォームとゲームバージョンの両方\n"
 result_text += "| プラットフォームとバージョン | 人数 | 割合 |\n| ---- | ---- | ---- |\n"
 for version, count in sorted_by_count_platform_game_version_counter:
-  result_text += f"| {version} | {count} | {calc_percentage(sum, count)}% |\n"
+  result_text += f"| {version} | {count} | {calc_percentage(updated_players_count, count)}% |\n"
 plot_bar_chart(
   sorted_by_count_platform_game_version_counter,
   title="プラットフォーム&ゲームバージョン別プレイヤー人数",
@@ -287,5 +294,34 @@ result_text += "\n![HMD](platform_game_version_count.png)"
 # 5. README.mdに追加
 with open("README.md", "a", encoding="utf-8") as f:
   f.write(result_text)
-  
-print("finish!")
+
+print(f"統計データをREADMEに反映しました。")
+
+# ディレクトリがなければ作成
+os.makedirs("data", exist_ok=True)
+
+# ファイル名を日時付きで作成
+timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+json_filename = "data/history.json"
+
+# 既存のhistory.jsonを読み込み
+try:
+    with open(json_filename, "r", encoding="utf-8") as f:
+        history = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    history = {}
+
+history[timestamp_str] = {
+    "unupdated_players_count": unupdated_players_count,
+    "updated_players_count": updated_players_count,
+    "platform_game_version_counter": dict(sorted_by_count_platform_game_version_counter),
+    "platform_counter": dict(sorted_by_count_platform_counter),
+    "game_version_counter": dict(sorted_by_version_game_version_counter),
+    "hmd_counter": sorted_by_count_named_hmd_counter
+}
+
+with open(json_filename, "w", encoding="utf-8") as f:
+    json.dump(history, f, ensure_ascii=False, indent=2)
+
+print(f"統計データをJSONファイルに保存しました。")
