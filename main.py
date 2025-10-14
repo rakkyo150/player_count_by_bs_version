@@ -316,12 +316,12 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 history.append({
     "timestamp": timestamp_str,
-    "unupdated_players_count": unupdated_players_count,
-    "updated_players_count": updated_players_count,
-    "platform_game_version_counter": dict(sorted_by_count_platform_game_version_counter),
-    "platform_counter": dict(sorted_by_count_platform_counter),
-    "game_version_counter": dict(sorted_by_version_game_version_counter),
-    "hmd_counter": sorted_by_count_named_hmd_counter
+    "unupdated_players": unupdated_players_count,
+    "updated_players": updated_players_count,
+    "platform_game_version": dict(sorted_by_count_platform_game_version_counter),
+    "platform": dict(sorted_by_count_platform_counter),
+    "game_version": dict(sorted_by_version_game_version_counter),
+    "hmd": sorted_by_count_named_hmd_counter
 })
 
 with open(json_filename, "w", encoding="utf-8") as f:
