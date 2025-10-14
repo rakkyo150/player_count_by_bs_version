@@ -155,7 +155,7 @@ if response_json == None:
 total_data = response_json.get("metadata").get("total")
 all_pages = (total_data + per_page - 1) // per_page
 
-for page in tqdm(range(2, 2), desc="Processing pages"):
+for page in tqdm(range(2, all_pages + 1), desc="Processing pages"):
   player_id_name_list, _ = fetch_player_ids_and_names(player_id_name_list, page)
   time.sleep(2)
 
