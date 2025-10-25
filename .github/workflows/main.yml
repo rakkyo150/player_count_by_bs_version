@@ -28,6 +28,17 @@ jobs:
     
     - name: Run uv
       run: uv run main.py
+    
+    - name: Release
+      run: |
+        set -x
+        cd data
+        assets=()
+        assets+=("./history.json")
+        tag_name=`date '+%Y%m%d%H%M'`
+        gh release create "$tag_name" "${assets[@]}" -t "Latest"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Auto Commit
       uses: stefanzweifel/git-auto-commit-action@v6
